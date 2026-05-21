@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Local café stop",
+    "type": "food",
+    "cost_estimate": 5,
+    "duration_hours": 0.5,
+    "indoor": true,
+    "weather_suitability": ["any"],
+    "intensity": 1,
+    "category": "dining"
+  },
+  {
+    "name": "Scenic viewpoint photo break",
+    "type": "nature",
+    "cost_estimate": 0,
+    "duration_hours": 0.5,
+    "indoor": false,
+    "weather_suitability": ["sunny", "cloudy"],
+    "intensity": 1,
+    "category": "activity"
+  },
+  {
+    "name": "Quick souvenir shop visit",
+    "type": "shopping",
+    "cost_estimate": 10,
+    "duration_hours": 0.5,
+    "indoor": true,
+    "weather_suitability": ["any"],
+    "intensity": 1,
+    "category": "shopping"
+  },
+  {
+    "name": "Traditional tea tasting",
+    "type": "culture",
+    "cost_estimate": 3,
+    "duration_hours": 0.5,
+    "indoor": true,
+    "weather_suitability": ["any"],
+    "intensity": 1,
+    "category": "dining"
+  },
+  {
+    "name": "Short heritage walk",
+    "type": "culture",
+    "cost_estimate": 0,
+    "duration_hours": 1,
+    "indoor": false,
+    "weather_suitability": ["sunny", "cloudy"],
+    "intensity": 1,
+    "category": "activity"
+  },
+  {
+    "name": "Fruit market visit",
+    "type": "food",
+    "cost_estimate": 2,
+    "duration_hours": 0.5,
+    "indoor": false,
+    "weather_suitability": ["any"],
+    "intensity": 1,
+    "category": "dining"
+  }
+]

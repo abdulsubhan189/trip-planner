@@ -1,0 +1,6 @@
+[
+  { "name": "Serena Hotel Skardu", "destination": "skardu", "price_per_night": 150, "stars": 4, "lat": 35.2975, "lon": 75.6320, "type": "luxury" },
+  { "name": "Skardu Inn", "destination": "skardu", "price_per_night": 50, "stars": 2, "lat": 35.2960, "lon": 75.6300, "type": "budget" },
+  { "name": "Hunza Darbar Hotel", "destination": "hunza", "price_per_night": 80, "stars": 3, "lat": 36.3170, "lon": 74.6540, "type": "medium" },
+  { "name": "Eagle's Nest Hotel", "destination": "hunza", "price_per_night": 120, "stars": 4, "lat": 36.3185, "lon": 74.6522, "type": "luxury" }
+]

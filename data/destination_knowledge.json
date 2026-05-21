@@ -1,0 +1,312 @@
+{
+  "skardu": {
+    "coordinates": { "lat": 35.2971, "lon": 75.6306 },
+    "hotel_zone": { "lat": 35.297, "lon": 75.631 },
+    "tags": ["mountain", "cold", "adventure"],
+    "attractions": [
+      {
+        "name": "Shangrila Resort (Lower Kachura Lake)",
+        "type": "nature",
+        "cost_estimate": 150,
+        "indoor": false,
+        "duration_hours": 2,
+        "lat": 35.2984,
+        "lon": 75.6124,
+        "intensity": 1,
+        "weather_score": { "sunny": 10, "cloudy": 8, "rainy": 3, "snowy": 2 },
+        "tiers": [
+          { "name": "Private boat tour", "cost": 80, "duration": 1.5, "notes": "Exclusive boating on the lake", "weather_score": { "sunny": 10, "cloudy": 7, "rainy": 1, "snowy": 0 } }
+        ]
+      },
+      {
+        "name": "Upper Kachura Lake",
+        "type": "nature",
+        "cost_estimate": 30,
+        "indoor": false,
+        "duration_hours": 1.5,
+        "lat": 35.3014,
+        "lon": 75.6189,
+        "intensity": 1,
+        "weather_score": { "sunny": 10, "cloudy": 8, "rainy": 2, "snowy": 1 }
+      },
+      {
+        "name": "Katpana Cold Desert",
+        "type": "adventure",
+        "cost_estimate": 50,
+        "indoor": false,
+        "duration_hours": 2,
+        "lat": 35.3245,
+        "lon": 75.5892,
+        "intensity": 2,
+        "weather_score": { "sunny": 9, "cloudy": 7, "rainy": 1, "snowy": 0 },
+        "tiers": [
+          { "name": "Jeep safari", "cost": 120, "duration": 2.5, "notes": "Explore deeper dunes", "weather_score": { "sunny": 9, "cloudy": 6, "rainy": 0, "snowy": 0 } }
+        ]
+      },
+      {
+        "name": "Deosai National Park",
+        "type": "adventure",
+        "cost_estimate": 200,
+        "indoor": false,
+        "duration_hours": 6,
+        "lat": 35.1203,
+        "lon": 75.4528,
+        "intensity": 4,
+        "weather_score": { "sunny": 9, "cloudy": 6, "rainy": 1, "snowy": 0 },
+        "tiers": [
+          { "name": "Guided trek with camping", "cost": 300, "duration": 8, "notes": "Overnight with guide", "weather_score": { "sunny": 9, "cloudy": 5, "rainy": 0, "snowy": 0 } }
+        ]
+      },
+      {
+        "name": "Shigar Fort",
+        "type": "culture",
+        "cost_estimate": 100,
+        "indoor": true,
+        "duration_hours": 1.5,
+        "lat": 35.4267,
+        "lon": 75.7401,
+        "intensity": 1,
+        "weather_score": { "sunny": 8, "cloudy": 8, "rainy": 7, "snowy": 6 }
+      },
+      {
+        "name": "Khaplu Palace",
+        "type": "culture",
+        "cost_estimate": 80,
+        "indoor": true,
+        "duration_hours": 1.5,
+        "lat": 35.1574,
+        "lon": 76.3384,
+        "intensity": 1,
+        "weather_score": { "sunny": 8, "cloudy": 8, "rainy": 7, "snowy": 6 }
+      },
+      {
+        "name": "Basho Valley",
+        "type": "adventure",
+        "cost_estimate": 0,
+        "indoor": false,
+        "duration_hours": 4,
+        "lat": 35.3095,
+        "lon": 75.5096,
+        "intensity": 2,
+        "weather_score": { "sunny": 9, "cloudy": 7, "rainy": 2, "snowy": 1 }
+      },
+      {
+        "name": "Manthokha Waterfall",
+        "type": "adventure",
+        "cost_estimate": 20,
+        "indoor": false,
+        "duration_hours": 1,
+        "lat": 35.2293,
+        "lon": 75.7135,
+        "intensity": 1,
+        "weather_score": { "sunny": 9, "cloudy": 7, "rainy": 1, "snowy": 0 }
+      },
+      {
+        "name": "Blind Lake (Jarba Zoo)",
+        "type": "nature",
+        "cost_estimate": 10,
+        "indoor": false,
+        "duration_hours": 1,
+        "lat": 35.1772,
+        "lon": 75.7474,
+        "intensity": 1,
+        "weather_score": { "sunny": 8, "cloudy": 7, "rainy": 2, "snowy": 1 }
+      },
+      {
+        "name": "Sarfaranga Desert",
+        "type": "adventure",
+        "cost_estimate": 30,
+        "indoor": false,
+        "duration_hours": 2,
+        "lat": 35.2553,
+        "lon": 75.6991,
+        "intensity": 2,
+        "weather_score": { "sunny": 9, "cloudy": 6, "rainy": 0, "snowy": 0 }
+      },
+      {
+        "name": "White Water Rafting on Indus River",
+        "type": "adventure",
+        "cost_estimate": 120,
+        "indoor": false,
+        "duration_hours": 3,
+        "lat": 35.2970,
+        "lon": 75.6300,
+        "intensity": 3,
+        "weather_score": { "sunny": 10, "cloudy": 5, "rainy": 0, "snowy": 0 }
+      },
+      {
+        "name": "Paragliding over Skardu Valley",
+        "type": "adventure",
+        "cost_estimate": 150,
+        "indoor": false,
+        "duration_hours": 1,
+        "lat": 35.2980,
+        "lon": 75.6310,
+        "intensity": 3,
+        "weather_score": { "sunny": 10, "cloudy": 4, "rainy": 0, "snowy": 0 }
+      },
+      {
+        "name": "Mountain Biking to Sadpara Lake",
+        "type": "adventure",
+        "cost_estimate": 80,
+        "indoor": false,
+        "duration_hours": 3,
+        "lat": 35.2990,
+        "lon": 75.6320,
+        "intensity": 3,
+        "weather_score": { "sunny": 8, "cloudy": 6, "rainy": 0, "snowy": 0 }
+      }
+    ]
+  },
+  "hunza": {
+    "coordinates": { "lat": 36.3161, "lon": 74.6533 },
+    "hotel_zone": { "lat": 36.316, "lon": 74.654 },
+    "tags": ["mountain", "cold", "culture"],
+    "attractions": [
+      {
+        "name": "Baltit Fort",
+        "type": "culture",
+        "cost_estimate": 20,
+        "indoor": true,
+        "duration_hours": 1,
+        "lat": 36.3241,
+        "lon": 74.6735,
+        "intensity": 1,
+        "weather_score": { "sunny": 9, "cloudy": 9, "rainy": 8, "snowy": 7 },
+        "tiers": [
+          { "name": "Audio guide + museum pass", "cost": 15, "duration": 0.5, "notes": "Enhanced experience", "weather_score": { "sunny": 9, "cloudy": 9, "rainy": 8, "snowy": 7 } }
+        ]
+      },
+      {
+        "name": "Altit Fort",
+        "type": "culture",
+        "cost_estimate": 20,
+        "indoor": true,
+        "duration_hours": 1,
+        "lat": 36.3178,
+        "lon": 74.6837,
+        "intensity": 1,
+        "weather_score": { "sunny": 9, "cloudy": 9, "rainy": 8, "snowy": 7 }
+      },
+      {
+        "name": "Attabad Lake",
+        "type": "nature",
+        "cost_estimate": 15,
+        "indoor": false,
+        "duration_hours": 2,
+        "lat": 36.3264,
+        "lon": 74.7398,
+        "intensity": 2,
+        "weather_score": { "sunny": 10, "cloudy": 7, "rainy": 1, "snowy": 0 },
+        "tiers": [
+          { "name": "Private boat ride", "cost": 50, "duration": 1, "notes": "Exclusive boat", "weather_score": { "sunny": 10, "cloudy": 6, "rainy": 0, "snowy": 0 } }
+        ]
+      },
+      {
+        "name": "Karimabad Bazaar",
+        "type": "shopping",
+        "cost_estimate": 20,
+        "indoor": false,
+        "duration_hours": 1.5,
+        "lat": 36.3212,
+        "lon": 74.6697,
+        "intensity": 1,
+        "weather_score": { "sunny": 8, "cloudy": 8, "rainy": 5, "snowy": 4 },
+        "tiers": [
+          { "name": "Traditional cooking class", "cost": 45, "duration": 2, "notes": "Learn local recipes", "weather_score": { "sunny": 8, "cloudy": 8, "rainy": 8, "snowy": 7 } }
+        ]
+      },
+      {
+        "name": "Eagle's Nest Viewpoint",
+        "type": "nature",
+        "cost_estimate": 0,
+        "indoor": false,
+        "duration_hours": 1,
+        "lat": 36.3200,
+        "lon": 74.6600,
+        "intensity": 1,
+        "weather_score": { "sunny": 10, "cloudy": 6, "rainy": 1, "snowy": 0 }
+      },
+      {
+        "name": "Borith Lake",
+        "type": "nature",
+        "cost_estimate": 0,
+        "indoor": false,
+        "duration_hours": 2,
+        "lat": 36.3950,
+        "lon": 74.8690,
+        "intensity": 1,
+        "weather_score": { "sunny": 9, "cloudy": 7, "rainy": 2, "snowy": 1 }
+      },
+      {
+        "name": "Passu Cones",
+        "type": "nature",
+        "cost_estimate": 0,
+        "indoor": false,
+        "duration_hours": 1.5,
+        "lat": 36.4170,
+        "lon": 74.8920,
+        "intensity": 2,
+        "weather_score": { "sunny": 10, "cloudy": 7, "rainy": 1, "snowy": 0 }
+      },
+      {
+        "name": "Hussaini Suspension Bridge",
+        "type": "adventure",
+        "cost_estimate": 0,
+        "indoor": false,
+        "duration_hours": 1,
+        "lat": 36.3990,
+        "lon": 74.8740,
+        "intensity": 3,
+        "weather_score": { "sunny": 9, "cloudy": 5, "rainy": 0, "snowy": 0 },
+        "tiers": [
+          { "name": "Guided crossing with local historian", "cost": 30, "duration": 1, "notes": "Local guide, stories", "weather_score": { "sunny": 9, "cloudy": 5, "rainy": 0, "snowy": 0 } }
+        ]
+      },
+      {
+        "name": "Ganish Village",
+        "type": "culture",
+        "cost_estimate": 0,
+        "indoor": false,
+        "duration_hours": 1,
+        "lat": 36.3155,
+        "lon": 74.6801,
+        "intensity": 1,
+        "weather_score": { "sunny": 9, "cloudy": 9, "rainy": 6, "snowy": 5 }
+      },
+      {
+        "name": "Rakaposhi Viewpoint",
+        "type": "nature",
+        "cost_estimate": 0,
+        "indoor": false,
+        "duration_hours": 1,
+        "lat": 36.2350,
+        "lon": 74.5218,
+        "intensity": 1,
+        "weather_score": { "sunny": 10, "cloudy": 7, "rainy": 1, "snowy": 0 }
+      },
+      {
+        "name": "Cultural Walking Tour with Local Guide",
+        "type": "culture",
+        "cost_estimate": 80,
+        "indoor": false,
+        "duration_hours": 3,
+        "lat": 36.3212,
+        "lon": 74.6697,
+        "intensity": 2,
+        "weather_score": { "sunny": 9, "cloudy": 9, "rainy": 7, "snowy": 5 }
+      },
+      {
+        "name": "Traditional Hunza Cooking Workshop",
+        "type": "culture",
+        "cost_estimate": 60,
+        "indoor": true,
+        "duration_hours": 2.5,
+        "lat": 36.3215,
+        "lon": 74.6700,
+        "intensity": 1,
+        "weather_score": { "sunny": 8, "cloudy": 8, "rainy": 8, "snowy": 7 }
+      }
+    ]
+  }
+}

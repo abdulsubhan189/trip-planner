@@ -1,0 +1,8 @@
+venv/
+__pycache__/
+*.pyc
+.env
+data/sessions/
+data/user_profiles/
+data/trip_history/
+data/escalation_queue.json
