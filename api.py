@@ -214,13 +214,10 @@ def _run_planning_sync(request: PlanRequest) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 app = FastAPI(title="Trip Planner Agentic API", version="1.0.0")
 
-# --- CORS Middleware (UPDATED) ---
+# --- CORS Middleware (UPDATED: allow all origins) ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://trip-planner-production-4086.up.railway.app"
-    ],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
