@@ -60,6 +60,13 @@ class EscalationTicket(Base):
     corrected_plan = Column(JSON, nullable=True)
     resolved_at    = Column(DateTime, nullable=True)
 
+# --- New table for destination knowledge cache ---
+class DestinationCache(Base):
+    __tablename__ = "destination_cache"
+    destination  = Column(String, primary_key=True)
+    data         = Column(JSON)
+    cached_at    = Column(DateTime, default=datetime.utcnow)
+
 def init_db():
     """Create all tables if they don't exist."""
     Base.metadata.create_all(bind=engine)

@@ -24,5 +24,6 @@ if __name__ == "__main__":
     if not os.environ.get("GROQ_API_KEY"):
         print("❌ ERROR: GROQ_API_KEY not found. Set it in .env file or environment variables.")
     else:
-        run_test("Skardu 5 days budget 800, I love adventure")
-        run_test("Hunza 3 days budget 300, prefer culture")
+        # run_test("Skardu 5 days budget 800, I love adventure")
+        # run_test("Hunza 3 days budget 300, prefer culture")
+        run_test("Lahore 3 days budget 500, prefer culture")
