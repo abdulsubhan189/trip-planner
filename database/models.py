@@ -60,12 +60,21 @@ class EscalationTicket(Base):
     corrected_plan = Column(JSON, nullable=True)
     resolved_at    = Column(DateTime, nullable=True)
 
-# --- New table for destination knowledge cache ---
 class DestinationCache(Base):
     __tablename__ = "destination_cache"
     destination  = Column(String, primary_key=True)
     data         = Column(JSON)
     cached_at    = Column(DateTime, default=datetime.utcnow)
+
+# --- New table for users (authentication) ---
+class User(Base):
+    __tablename__ = "users"
+    id            = Column(String, primary_key=True)
+    email         = Column(String, unique=True, nullable=False)
+    username      = Column(String, unique=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    created_at    = Column(DateTime, default=datetime.utcnow)
+    is_active     = Column(String, default="true")
 
 def init_db():
     """Create all tables if they don't exist."""

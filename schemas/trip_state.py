@@ -32,3 +32,5 @@ class TripState(BaseModel):
 
     # --- Additional field ---
     last_critic_feedback: str = ""
+    liked_activities: List[str] = []
+    disliked_activities: List[str] = []

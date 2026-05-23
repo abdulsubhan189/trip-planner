@@ -4,7 +4,8 @@ import uuid
 import time
 import uvicorn
 from concurrent.futures import ThreadPoolExecutor
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from memory.trip_history import save_trip, get_trip_history, get_visited_activities
 from memory.profile_memory import update_profile
@@ -20,6 +21,15 @@ from booking.booking_agent import (
     create_approval_request, approve_booking,
     reject_booking, get_approval
 )
+
+# --- NEW: Vector memory imports for feedback ---
+from memory.vector_memory import (
+    save_trip_embedding, find_similar_trips,
+    get_liked_activities, get_disliked_activities
+)
+
+# --- NEW: Authentication imports ---
+from auth.auth_handler import register_user, login_user, get_current_user
 
 # Load environment and check API key
 load_dotenv()
@@ -62,6 +72,16 @@ class PlanRequest(BaseModel):
     user_id: str = "anonymous"
     session_id: Optional[str] = None
 
+# --- NEW: Authentication request models ---
+class RegisterRequest(BaseModel):
+    email: str
+    username: str
+    password: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
 # ---------------------------------------------------------------------------
 # Helper: planning function (used by both sync and async)
 # ---------------------------------------------------------------------------
@@ -93,6 +113,14 @@ def _run_planning_sync(request: PlanRequest) -> Dict[str, Any]:
             state.budget = request.budget
         if request.preferences is not None:
             state.preferences = request.preferences
+
+        # --- NEW: Load liked/disliked activities from vector memory ---
+        liked = get_liked_activities(request.user_id)
+        disliked = get_disliked_activities(request.user_id)
+        if liked:
+            state.liked_activities = liked
+        if disliked:
+            state.disliked_activities = disliked
 
         # Invoke graph
         final_state = graph.invoke(state)
@@ -222,9 +250,34 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+security = HTTPBearer()
+
+def get_user_from_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    user = get_current_user(credentials.credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return user
+
 @app.get("/status")
 async def status():
     return {"status": "ok", "message": "Trip planner agent is ready"}
+
+# ---------------------------------------------------------------------------
+# Authentication endpoints
+# ---------------------------------------------------------------------------
+@app.post("/auth/register")
+async def register(request: RegisterRequest):
+    result = register_user(request.email, request.username, request.password)
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+@app.post("/auth/login")
+async def login(request: LoginRequest):
+    result = login_user(request.email, request.password)
+    if "error" in result:
+        raise HTTPException(status_code=401, detail=result["error"])
+    return result
 
 # ---------------------------------------------------------------------------
 # History endpoint
@@ -309,12 +362,66 @@ async def booking_status(approval_id: str):
     return approval
 
 # ---------------------------------------------------------------------------
-# Async endpoints
+# NEW: Feedback & Recommendations endpoints
 # ---------------------------------------------------------------------------
-@app.post("/plan/async")
-async def plan_trip_async(request: PlanRequest):
-    job_id = str(uuid.uuid4())
+class FeedbackRequest(BaseModel):
+    trip_id: str
+    rating: float  # 1.0 to 5.0
+    user_id: str = "anonymous"
 
+@app.post("/feedback")
+async def submit_feedback(request: FeedbackRequest):
+    """User rates a completed trip — stores embedding for learning."""
+    try:
+        # Get trip from history
+        from memory.trip_history import get_trip_history
+        history = get_trip_history(request.user_id, limit=50)
+        trip = next((t for t in history if t["trip_id"] == request.trip_id), None)
+        if not trip:
+            raise HTTPException(status_code=404, detail="Trip not found")
+        save_trip_embedding(
+            user_id=request.user_id,
+            trip_id=request.trip_id,
+            destination=trip["destination"],
+            preferences=[],
+            activities=trip.get("activities", []),
+            rating=request.rating
+        )
+        return {"status": "saved", "trip_id": request.trip_id, "rating": request.rating}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/recommendations/{user_id}")
+async def get_recommendations(user_id: str, destination: str = "", preferences: str = ""):
+    """Get similar past trips and activity preferences for a user."""
+    prefs = preferences.split(",") if preferences else []
+    similar = find_similar_trips(user_id, destination, prefs)
+    liked = get_liked_activities(user_id)
+    disliked = get_disliked_activities(user_id)
+    return {
+        "similar_trips": similar,
+        "liked_activities": liked,
+        "disliked_activities": disliked
+    }
+
+# ---------------------------------------------------------------------------
+# PROTECTED ENDPOINTS (require token)
+# ---------------------------------------------------------------------------
+
+@app.post("/plan/async")
+async def plan_trip_async(
+    request: PlanRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    user = get_current_user(credentials.credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    # Override user_id from token (cannot be faked)
+    request = request.model_copy(update={"user_id": user["user_id"]})
+
+    job_id = str(uuid.uuid4())
     session_id = request.session_id
     if not session_id or not load_session(session_id):
         session_id = create_session(request.user_id)
@@ -336,28 +443,26 @@ async def plan_trip_async(request: PlanRequest):
 
     return {"job_id": job_id, "status": "queued", "session_id": session_id}
 
-@app.get("/plan/status/{job_id}")
-async def get_job_status(job_id: str):
-    job = jobs.get(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    response = {"job_id": job_id, "status": job["status"]}
-    if job["status"] == "done":
-        response["result"] = job["result"]
-    elif job["status"] == "failed":
-        response["error"] = job["error"]
-    return response
-
-# ---------------------------------------------------------------------------
-# Sync endpoint (kept for quick testing)
-# ---------------------------------------------------------------------------
 @app.post("/plan")
-async def plan_trip_sync(request: PlanRequest):
+async def plan_trip_sync(
+    request: PlanRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    user = get_current_user(credentials.credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    # Override user_id from token
+    request = request.model_copy(update={"user_id": user["user_id"]})
     try:
         result = _run_planning_sync(request)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ---------------------------------------------------------------------------
+# Keep the original async and sync endpoints? We replaced them with protected versions.
+# The original unprotected endpoints are now commented or replaced. Only protected ones remain.
+# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     uvicorn.run("api:app", host="0.0.0.0", port=8000, reload=True)

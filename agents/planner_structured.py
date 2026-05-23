@@ -159,7 +159,8 @@ def _get_hotel_coords(dest_info: Dict) -> Tuple:
 # ---------------------------------------------------------------------------
 # Candidate pool — keep ALL attractions, compute utility
 # ---------------------------------------------------------------------------
-def _get_candidates(destination: str, weather_cond: str, preferences: List[str], pref_weights: Dict) -> List[Dict]:
+def _get_candidates(destination: str, weather_cond: str, preferences: List[str],
+                    pref_weights: Dict, state: TripState) -> List[Dict]:
     dest_info = get_destination_info(destination)
     attractions = dest_info.get("attractions", [])
     if not attractions:
@@ -179,8 +180,18 @@ def _get_candidates(destination: str, weather_cond: str, preferences: List[str],
         if "value_score" not in a:
             a["value_score"] = a["utility"] / 2
         result.append(a)
-    return result
 
+    # --- Boost liked activities ---
+    if hasattr(state, 'liked_activities') and state.liked_activities:
+        for a in result:
+            if a["name"] in state.liked_activities:
+                a["value_score"] = min(10, a["value_score"] + 2)
+
+    # --- Remove disliked activities ---
+    if hasattr(state, 'disliked_activities') and state.disliked_activities:
+        result = [a for a in result if a["name"] not in state.disliked_activities]
+
+    return result
 # ---------------------------------------------------------------------------
 # Scoring
 # ---------------------------------------------------------------------------
@@ -749,7 +760,7 @@ def structured_planner(state: TripState) -> TripState:
         )
 
         pref_weights = getattr(state, "preference_weights", {"sightseeing": 0.2})
-        candidates = _get_candidates(state.destination, weather_cond, state.preferences, pref_weights)
+        candidates = _get_candidates(state.destination, weather_cond, state.preferences, pref_weights, state)
         if not candidates:
             return _simple_fallback(state, "no suitable attractions")
 

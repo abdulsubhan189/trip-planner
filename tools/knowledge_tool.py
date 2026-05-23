@@ -39,6 +39,7 @@ KNOWN_COORDS = {
     "singapore":   ( 1.3521, 103.8198),
     "kuala lumpur":(  3.1390, 101.6869),
     "cairo":       (30.0444,  31.2357),
+    "cholistan": (28.7728, 71.3378),
 }
 
 # ---------------------------------------------------------------------------
@@ -91,18 +92,24 @@ def _get_coordinates(destination: str):
     dest_lower = destination.lower().strip()
     if dest_lower in KNOWN_COORDS:
         return KNOWN_COORDS[dest_lower]
-    try:
-        resp = requests.get(
-            NOMINATIM_URL,
-            params={"q": destination, "format": "json", "limit": 1},
-            headers=HEADERS,
-            timeout=10
-        )
-        data = resp.json()
-        if data:
-            return float(data[0]["lat"]), float(data[0]["lon"])
-    except Exception as e:
-        logger.warning(f"Nominatim failed for {destination}: {e}")
+
+    # Try multiple Nominatim approaches
+    urls_to_try = [
+        f"https://nominatim.openstreetmap.org/search?q={destination}&format=json&limit=1",
+        f"https://geocode.maps.co/search?q={destination}&api_key=free",
+    ]
+    
+    for url in urls_to_try:
+        try:
+            resp = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+            if resp.status_code == 200 and resp.text.strip():
+                data = resp.json()
+                if data:
+                    return float(data[0]["lat"]), float(data[0]["lon"])
+        except Exception as e:
+            logger.warning(f"Geocoding failed for {destination}: {e}")
+            continue
+    
     return None, None
 
 # ---------------------------------------------------------------------------
