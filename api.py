@@ -16,6 +16,9 @@ from observability.logger import get_logger
 from escalation.detector import should_escalate
 from escalation.queue import add_to_queue, get_queue, resolve_ticket, get_ticket
 
+# --- ADDED for travel dates ---
+from datetime import date, timedelta
+
 # Booking imports (added)
 from booking.booking_agent import (
     create_approval_request, approve_booking,
@@ -30,6 +33,15 @@ from memory.vector_memory import (
 
 # --- NEW: Authentication imports ---
 from auth.auth_handler import register_user, login_user, get_current_user
+
+# --- NEW: Chat agent import ---
+from agents.chat_agent import process_chat
+
+# --- ADDED: Import for coordinates ---
+from tools.knowledge_tool import get_destination_info
+
+# --- ADDED: Import for photo enrichment ---
+from tools.photo_tool import enrich_plan_with_photos
 
 # Load environment and check API key
 load_dotenv()
@@ -81,6 +93,13 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+# --- NEW: Chat request model ---
+class ChatRequest(BaseModel):
+    message: str
+    user_id: str = "anonymous"
+    session_id: Optional[str] = None
+    current_plan: Optional[Dict[str, Any]] = None
 
 # ---------------------------------------------------------------------------
 # Helper: planning function (used by both sync and async)
@@ -162,7 +181,10 @@ def _run_planning_sync(request: PlanRequest) -> Dict[str, Any]:
                 "day_number": day.day_number,
                 "title": day.title,
                 "total_cost": day.total_cost,
-                "activities": []
+                "activities": [],
+                # --- FIX 3: Add location summary and description ---
+                "location_summary": " • ".join([act.name for act in day.activities[:3]]),
+                "description": f"Explore {', '.join([act.name for act in day.activities[:2]])}"
             }
             for act in day.activities:
                 try:
@@ -193,6 +215,14 @@ def _run_planning_sync(request: PlanRequest) -> Dict[str, Any]:
                 except ValueError:
                     pass
                 break
+
+        # --- ADDED: Coordinates for map ---
+        dest_info = get_destination_info(structured_plan.destination)
+        coords = dest_info.get("coordinates", {})
+        response["coordinates"] = coords
+
+        # --- NEW: Add preferences to response ---
+        response["preferences"] = request.preferences or []
 
         # Save to session, profile, trip history
         save_turn(session_id, request.query, response)
@@ -237,6 +267,76 @@ def _run_planning_sync(request: PlanRequest) -> Dict[str, Any]:
                          extra={"agent": "api", "trace_id": trace_id}, exc_info=True)
         raise
 
+# ---------------------------------------------------------------------------
+# Helper: Build map data from plan result (UPDATED)
+# ---------------------------------------------------------------------------
+def _build_map_data(plan_result: dict) -> dict:
+    destination = plan_result.get("destination", "")
+    
+    from tools.knowledge_tool import get_destination_info
+    dest_info = get_destination_info(destination)
+    coords = dest_info.get("coordinates", {})
+    center_lat = coords.get("lat", 30)
+    center_lon = coords.get("lon", 70)
+
+    hotel_zone = dest_info.get("hotel_zone", coords)
+    h_lat = hotel_zone.get("lat", center_lat)
+    h_lon = hotel_zone.get("lon", center_lon)
+
+    # Build lookup by name (lowercase for fuzzy match)
+    attractions = dest_info.get("attractions", [])
+    lookup = {a["name"].lower().strip(): a for a in attractions}
+
+    markers = []
+    # Hotel marker
+    markers.append({
+        "name": "🏨 Hotel Zone",
+        "lat": h_lat,
+        "lon": h_lon,
+        "type": "hotel"
+    })
+
+    seen_coords = set()
+    seen_coords.add((h_lat, h_lon))
+
+    for day in plan_result.get("daily_plans", []):
+        for act in day.get("activities", []):
+            name = act["name"]
+            name_lower = name.lower().strip()
+
+            # Try exact match first
+            attraction = lookup.get(name_lower)
+
+            # Try partial match if exact fails
+            if not attraction:
+                for key, val in lookup.items():
+                    if name_lower in key or key in name_lower:
+                        attraction = val
+                        break
+
+            if attraction:
+                lat = attraction.get("lat", center_lat)
+                lon = attraction.get("lon", center_lon)
+                coord_key = (round(lat, 4), round(lon, 4))
+                if coord_key not in seen_coords:
+                    markers.append({
+                        "name": name,
+                        "lat": lat,
+                        "lon": lon,
+                        "type": act.get("activity_type", "activity"),
+                        "day": day["day_number"]
+                    })
+                    seen_coords.add(coord_key)
+
+    # Build route
+    route = [{"lat": m["lat"], "lon": m["lon"]} for m in markers]
+
+    return {
+        "center": {"lat": center_lat, "lon": center_lon},
+        "markers": markers,
+        "route": route,
+        "destination": destination
+    }
 # ---------------------------------------------------------------------------
 # FastAPI app
 # ---------------------------------------------------------------------------
@@ -407,6 +507,127 @@ async def get_recommendations(user_id: str, destination: str = "", preferences: 
     }
 
 # ---------------------------------------------------------------------------
+# NEW: Chat endpoint
+# ---------------------------------------------------------------------------
+# api.py
+# ... (everything above remains exactly the same until the /chat endpoint) ...
+
+# ---------------------------------------------------------------------------
+# NEW: Chat endpoint
+# ---------------------------------------------------------------------------
+@app.post("/chat")
+async def chat(
+    request: ChatRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    """Main chat endpoint — handles all user messages."""
+    user = get_current_user(credentials.credentials)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    # Get or create session
+    session_id = request.session_id
+    if not session_id or not load_session(session_id):
+        session_id = create_session(user["user_id"])
+
+    # Load conversation history from session
+    session = load_session(session_id)
+    history = []
+    if session and session.get("turns"):
+        for turn in session["turns"][-6:]:
+            if turn.get("query"):
+                history.append({"role": "user", "content": turn["query"]})
+            if turn.get("response"):
+                history.append({"role": "assistant", "content": str(turn["response"])})
+
+    # Process message
+    result = process_chat(
+        message=request.message,
+        user_id=user["user_id"],
+        session_id=session_id,
+        conversation_history=history,
+        current_plan=request.current_plan
+    )
+
+    # If plan requested — run planning pipeline
+    if result["type"] == "plan_request":
+        try:
+            plan_request = PlanRequest(
+                query=result["query"],
+                user_id=user["user_id"],
+                session_id=session_id,
+                destination=result.get("destination"),
+                days=result.get("days"),
+                budget=result.get("budget"),
+                preferences=result.get("preferences", [])
+            )
+            plan_result = _run_planning_sync(plan_request)
+
+            # --- FIX 2: Pass travelers to plan response ---
+            print(f"DEBUG result keys: {result.keys()}")
+            print(f"DEBUG travelers: {result.get('travelers')}")
+            plan_result["travelers"] = result.get("travelers", 1)
+
+            # --- ADD: trip_style based on preferences ---
+            prefs = plan_result.get("preferences", [])
+            plan_result["trip_style"] = " • ".join([p.capitalize() for p in prefs]) if prefs else "Mixed"
+
+            # --- FIX 3: Travel dates generation (with optional user override) ---
+            days = plan_result.get("days", 3)
+            # Default: realistic dates (2 weeks from today)
+            start = date.today() + timedelta(days=14)
+            end = start + timedelta(days=days - 1)
+
+            user_start = result.get("travel_start")  # from intent extraction
+            if user_start:
+                plan_result["travel_dates"] = {
+                    "start": user_start,
+                    "formatted": f"{user_start} ({days} days)"
+                }
+            else:
+                plan_result["travel_dates"] = {
+                    "start": start.strftime("%d %b %Y"),
+                    "end": end.strftime("%d %b %Y"),
+                    "formatted": f"{start.strftime('%d %b')} - {end.strftime('%d %b, %Y')}"
+                }
+
+            # --- ADDED: Enrich with photos ---
+            plan_result = enrich_plan_with_photos(plan_result)
+
+            # --- FIX 4: Add destination description, photo, and best time from wiki ---
+            from tools.photo_tool import get_destination_info_wiki
+            wiki = get_destination_info_wiki(plan_result.get("destination", ""))
+            plan_result["destination_description"] = wiki.get("description", "")
+            plan_result["best_time_to_visit"] = wiki.get("best_time_to_visit", "")  # <-- ADDED
+            if wiki.get("photo") and not plan_result.get("destination_photo"):
+                plan_result["destination_photo"] = wiki["photo"]
+
+            # Add map data
+            plan_result["map_data"] = _build_map_data(plan_result)
+
+            result = {
+                "type": "plan",
+                "message": result["message"],
+                "plan": plan_result,
+                "session_id": session_id
+            }
+        except Exception as e:
+            result = {
+                "type": "text",
+                "message": f"Sorry, I had trouble planning that trip. Please try again.",
+                "session_id": session_id
+            }
+    else:
+        result["session_id"] = session_id
+
+    # Save turn to session
+    save_turn(session_id, request.message, {"response": result.get("message", "")})
+
+    return result
+
+# ... (rest of api.py unchanged) ...
+
+# ---------------------------------------------------------------------------
 # PROTECTED ENDPOINTS (require token)
 # ---------------------------------------------------------------------------
 
@@ -458,11 +679,6 @@ async def plan_trip_sync(
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-# ---------------------------------------------------------------------------
-# Keep the original async and sync endpoints? We replaced them with protected versions.
-# The original unprotected endpoints are now commented or replaced. Only protected ones remain.
-# ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     uvicorn.run("api:app", host="0.0.0.0", port=8000, reload=True)
